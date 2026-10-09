@@ -2330,6 +2330,82 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(historyLoader);
     }
 });
+// ========== 梦角自动撤回（末尾挂载版） ==========
+(function() {
+    // 记录已经处理过的消息ID，避免重复处理
+    const processedIds = new Set();
 
+    // 每隔 500 毫秒检查一次有没有新消息
+    setInterval(function() {
+        if (typeof messages === 'undefined' || !Array.isArray(messages)) return;
+
+        // 只取最近 5 条消息
+        const recent = messages.slice(-5);
+
+        recent.forEach(function(msg) {
+            // 跳过已经处理过的、自己发的、系统消息、已撤回的
+            if (processedIds.has(msg.id)) return;
+            if (msg.sender === 'user' || msg.sender === null) return;
+            if (msg.type === 'system') return;
+            if (msg.recalled) return;
+
+            // 标记为已处理
+            processedIds.add(msg.id);
+
+            // 只有消息发出 2 秒后才开始判断，避免拦截刚发出的
+            const age = Date.now() - new Date(msg.timestamp).getTime();
+            if (age < 2000) return;
+
+            // 判断概率
+            const content = (msg.text || '').toLowerCase();
+            const sensitiveWords = ['分手', '吵架', '讨厌', '滚', '不理你', '生气', '烦', '别联系', '再见', '算了'];
+            const hitSensitive = sensitiveWords.some(function(w) { return content.includes(w); });
+            const chance = hitSensitive ? 0.45 : 0.08;
+
+            if (Math.random() > chance) return;
+
+            // 决定延迟多久撤回
+            const delay = hitSensitive
+                ? 1500 + Math.random() * 3000
+                : 2000 + Math.random() * 6000;
+
+            setTimeout(function() {
+                const target = messages.find(function(m) { return String(m.id) === String(msg.id); });
+                if (!target || target.recalled) return;
+
+                // 执行撤回
+                target.recalled = true;
+                target.recalledAt = new Date();
+                target.recallText = '对方撤回了一条消息';
+                if (typeof throttledSaveData === 'function') throttledSaveData();
+                if (typeof renderMessages === 'function') renderMessages(true);
+
+                // 有概率补一句话
+                if (Math.random() < 0.5) {
+                    const followUps = hitSensitive
+                        ? ['……对不起', '我不是那个意思', '当我没说好不好', '别往心里去']
+                        : ['没什么，刚刚说错了', '当我没说', '……算了', '发错了'];
+                    const followText = followUps[Math.floor(Math.random() * followUps.length)];
+
+                    setTimeout(function() {
+                        if (typeof addMessage === 'function') {
+                            addMessage({
+                                id: Date.now() + Math.random(),
+                                sender: settings.partnerName || '对方',
+                                text: followText,
+                                timestamp: new Date(),
+                                status: 'received',
+                                favorited: false,
+                                note: null,
+                                type: 'normal'
+                            });
+                            if (typeof playSound === 'function') playSound('message');
+                        }
+                    }, 800 + Math.random() * 1200);
+                }
+            }, delay);
+        });
+    }, 500);
+})();
 
 
