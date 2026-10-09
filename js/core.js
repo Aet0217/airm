@@ -951,6 +951,14 @@ function createMessageFragment(msg, prevMsg, nextMsg, lastSenderRef) {
         lastSenderRef.current = 'system';
         return fragment;
     }
+    if (msg.recalled) {
+    const recallDiv = document.createElement('div');
+    recallDiv.className = 'system-message recall-message';
+    recallDiv.innerHTML = msg.recallText || '你撤回了一条消息';
+    fragment.appendChild(recallDiv);
+    lastSenderRef.current = 'system';
+    return fragment;
+}
 
     if (msg.type === 'call-event') {
         const callEvDiv = document.createElement('div');
@@ -1071,6 +1079,9 @@ function createMessageFragment(msg, prevMsg, nextMsg, lastSenderRef) {
 
     let actionsHTML = '';
     if (settings.replyEnabled) actionsHTML += `<button class="meta-action-btn reply-btn" title="回复"><i class="fas fa-reply"></i></button>`;
+    if (msg.sender === 'user' && !msg.recalled) {
+    actionsHTML += `<button class="meta-action-btn recall-btn" title="撤回"><i class="fas fa-undo-alt"></i></button>`;
+}
     const starIcon = msg.favorited ? 'fas fa-star' : 'far fa-star';
     actionsHTML += `<button class="meta-action-btn favorite-action-btn ${msg.favorited ? 'favorited' : ''}" title="${msg.favorited ? '取消收藏' : '收藏'}"><i class="${starIcon}"></i></button>`;
     actionsHTML += `<button class="meta-action-btn delete-btn" title="删除"><i class="fas fa-trash-alt"></i></button>`;
