@@ -10835,3 +10835,16 @@
             border-color: var(--accent-color) !important;
             outline: none;
         }
+.recall-message {
+    opacity: 0.7;
+    font-style: italic;
+    animation: recallFadeIn 0.3s ease;
+}
+@keyframes recallFadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 0.7; transform: scale(1); }
+}
+.meta-action-btn.recall-btn:hover {
+    color: var(--accent-color) !important;
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
