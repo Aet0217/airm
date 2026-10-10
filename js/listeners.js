@@ -1037,34 +1037,48 @@ if (_chatSettingsEl) _chatSettingsEl.addEventListener('click', () => {
                 if (panel) panel.classList.add('active');
             };
 
-            function updateDelayUI() {
-                minDelaySlider.value = settings.replyDelayMin;
-                const minSec = settings.replyDelayMin / 1000;
-                minDelayValue.textContent = minSec >= 60 ? `${(minSec/60).toFixed(1)}分钟` : `${minSec.toFixed(0)}s`;
-                maxDelaySlider.value = settings.replyDelayMax;
-                const maxSec = settings.replyDelayMax / 1000;
-                maxDelayValue.textContent = maxSec >= 60 ? `${(maxSec/60).toFixed(1)}分钟` : `${maxSec.toFixed(0)}s`;
-                maxDelaySlider.min = settings.replyDelayMin; 
-            }
-            updateDelayUI();
+            function formatDelayLabel(seconds) {
+    if (seconds < 60) return `${seconds}秒`;
+    if (seconds < 3600) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return s > 0 ? `${m}分${s}秒` : `${m}分钟`;
+    }
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return m > 0 ? `${h}小时${m}分` : `${h}小时`;
+}
 
-            minDelaySlider.addEventListener('input', (e) => {
-                settings.replyDelayMin = parseInt(e.target.value, 10);
-                if (settings.replyDelayMin > settings.replyDelayMax) {
-                    settings.replyDelayMax = settings.replyDelayMin;
-                }
-                updateDelayUI();
-            });
-            minDelaySlider.addEventListener('change', throttledSaveData);
+function updateDelayUI() {
+    const minSec = Math.max(30, Math.round((settings.replyDelayMin || 3000) / 1000));
+    const maxSec = Math.max(30, Math.round((settings.replyDelayMax || 7000) / 1000));
+    minDelaySlider.value = minSec;
+    minDelayValue.textContent = formatDelayLabel(minSec);
+    maxDelaySlider.value = maxSec;
+    maxDelayValue.textContent = formatDelayLabel(maxSec);
+    maxDelaySlider.min = minSec;
+}
+updateDelayUI();
 
-            maxDelaySlider.addEventListener('input', (e) => {
-                settings.replyDelayMax = parseInt(e.target.value, 10);
-                 if (settings.replyDelayMax < settings.replyDelayMin) {
-                    settings.replyDelayMin = settings.replyDelayMax;
-                }
-                updateDelayUI();
-            });
-            maxDelaySlider.addEventListener('change', throttledSaveData);
+minDelaySlider.addEventListener('input', (e) => {
+    const sec = parseInt(e.target.value, 10);
+    settings.replyDelayMin = sec * 1000;
+    if (settings.replyDelayMin > settings.replyDelayMax) {
+        settings.replyDelayMax = settings.replyDelayMin;
+    }
+    updateDelayUI();
+});
+minDelaySlider.addEventListener('change', throttledSaveData);
+
+maxDelaySlider.addEventListener('input', (e) => {
+    const sec = parseInt(e.target.value, 10);
+    settings.replyDelayMax = sec * 1000;
+    if (settings.replyDelayMax < settings.replyDelayMin) {
+        settings.replyDelayMin = settings.replyDelayMax;
+    }
+    updateDelayUI();
+});
+maxDelaySlider.addEventListener('change', throttledSaveData);
 
             const settingToggles = {
                 '#reply-toggle': {
