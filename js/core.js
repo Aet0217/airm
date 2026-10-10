@@ -974,45 +974,6 @@ function createMessageFragment(msg, prevMsg, nextMsg, lastSenderRef) {
         return fragment;
     }
 
-if (msg.type === 'quiz') {
-    const quizWrap = document.createElement('div');
-    quizWrap.className = `message-wrapper ${msg.sender === 'user' ? 'sent' : 'received'}`;
-    quizWrap.dataset.id = msg.id;
-    quizWrap.dataset.msgId = msg.id;
-
-    const isMe = msg.sender === 'user';
-    const answers = msg.answer || [];
-    const options = msg.options || [];
-
-    const optsHTML = options.map(function(opt, idx) {
-        const selected = answers.indexOf(idx) !== -1;
-        const markShape = msg.multiSelect ? 'multi' : '';
-        const checkMark = selected ? '✓' : '';
-        return '<div class="quiz-opt ' + (selected ? 'selected' : '') + '">'
-            + '<div class="quiz-opt-mark ' + markShape + '">' + checkMark + '</div>'
-            + '<div>' + opt + '</div>'
-            + '</div>';
-    }).join('');
-
-    let answerLine = '';
-    if (answers.length > 0) {
-        const chosen = answers.map(function(i) { return options[i]; }).join('、');
-        const label = isMe ? '我' : (settings.partnerName || '对方');
-        answerLine = '<div class="quiz-answer-line">' + label + '选择了：<b>' + chosen + '</b></div>';
-    } else if (isMe) {
-        answerLine = '<div class="quiz-wait">等待 Ta 回答…</div>';
-    } else {
-        answerLine = '<div class="quiz-wait">请选择你的答案</div>';
-    }
-
-    const bubble = document.createElement('div');
-    bubble.className = 'message quiz-message ' + (isMe ? 'message-sent' : 'message-received');
-    bubble.innerHTML = '<div class="quiz-q">' + msg.question + '</div>'
-        + '<div class="quiz-opt-list">' + optsHTML + '</div>'
-        + answerLine;
-
-    quizWrap.appendChild(bubble);
-
     // 如果对方出的题，我还没回答，允许点击选项
     if (!isMe && answers.length === 0) {
         bubble.querySelectorAll('.quiz-opt').forEach(function(el, idx) {
@@ -1021,7 +982,38 @@ if (msg.type === 'quiz') {
                 handleQuizOptionClick(msg.id, idx);
             });
         });
+
+        // 加一个确认按钮
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'quiz-confirm-btn';
+        confirmBtn.textContent = '确认';
+        confirmBtn.style.cssText = 'margin-top:10px;width:100%;padding:8px 0;border:none;border-radius:10px;background:var(--accent-color);color:#fff;font-size:13px;font-weight:600;font-family:var(--font-family);cursor:pointer;display:none;';
+        bubble.appendChild(confirmBtn);
+
+        confirmBtn.addEventListener('click', function() {
+            const target = messages.find(function(m) { return String(m.id) === String(msg.id); });
+            if (!target || !target.answer || target.answer.length === 0) return;
+            if (typeof finalizeUserQuizAnswer === 'function') finalizeUserQuizAnswer(target);
+        });
+
+        // 监听选项变化，显示/隐藏确认按钮
+        const observer = new MutationObserver(function() {
+            const target = messages.find(function(m) { return String(m.id) === String(msg.id); });
+            if (target && target.answer && target.answer.length > 0) {
+                confirmBtn.style.display = 'block';
+            } else {
+                confirmBtn.style.display = 'none';
+            }
+        });
+        bubble.querySelectorAll('.quiz-opt').forEach(function(el) {
+            observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+        });
     }
+
+    fragment.appendChild(quizWrap);
+    lastSenderRef.current = msg.sender;
+    return fragment;
+}
 
     fragment.appendChild(quizWrap);
     lastSenderRef.current = msg.sender;
@@ -2414,7 +2406,7 @@ processedIds.add(msg.id);
             const content = (msg.text || '').toLowerCase();
             const sensitiveWords = ['分手', '吵架', '讨厌', '滚', '不理你', '生气', '烦', '别联系', '再见', '算了'];
             const hitSensitive = sensitiveWords.some(function(w) { return content.includes(w); });
-            const chance = 1; // 100% 撤回，测完记得改回来
+            const chance = hitSensitive ? 0.45 : 0.08;
 
             if (Math.random() > chance) return;
 
