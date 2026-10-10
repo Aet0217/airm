@@ -3056,3 +3056,139 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 })();
+// ==================== 查手机功能 ====================
+(function() {
+
+    window.triggerPhoneCheck = function() {
+        var modal = document.getElementById('phone-check-modal');
+        if (!modal) return;
+
+        // 更新梦角头像
+        var avatarWrap = document.getElementById('phone-check-avatar');
+        var partnerImg = document.querySelector('#partner-avatar img');
+        if (avatarWrap) {
+            if (partnerImg && partnerImg.src) {
+                avatarWrap.innerHTML = '<img src="' + partnerImg.src + '" style="width:100%;height:100%;object-fit:cover;">';
+            } else {
+                avatarWrap.innerHTML = '<i class="fas fa-user" style="color:#fff;font-size:24px;"></i>';
+            }
+        }
+
+        // 恢复初始状态
+        var scan = document.getElementById('phone-check-scanning');
+        if (scan) scan.style.display = 'none';
+        var btnGroup = modal.querySelector('.modal-buttons');
+        if (btnGroup) btnGroup.style.display = 'flex';
+
+        if (typeof showModal === 'function') {
+            showModal(modal);
+        }
+    };
+
+    window.acceptPhoneCheck = function() {
+        var modal = document.getElementById('phone-check-modal');
+        var scan = document.getElementById('phone-check-scanning');
+        var btnGroup = modal ? modal.querySelector('.modal-buttons') : null;
+
+        if (btnGroup) btnGroup.style.display = 'none';
+        if (scan) scan.style.display = 'block';
+
+        setTimeout(function() {
+            if (typeof hideModal === 'function') hideModal(modal);
+
+            // 分析数据
+            var msgCount = (typeof messages !== 'undefined') ? messages.length : 0;
+            var favCount = (typeof messages !== 'undefined') ? messages.filter(function(m) { return m.favorited; }).length : 0;
+            var replyCount = (typeof customReplies !== 'undefined') ? customReplies.length : 0;
+            var stickerCount = (typeof stickerLibrary !== 'undefined') ? stickerLibrary.length : 0;
+            var anniversaryCount = (typeof anniversaries !== 'undefined') ? anniversaries.length : 0;
+
+            var comments = [];
+            if (msgCount > 0) comments.push('原来我们有 ' + msgCount + ' 条聊天记录了呀');
+            if (favCount > 0) comments.push('你收藏了 ' + favCount + ' 条我说的话，我都看到了哦');
+            if (replyCount > 0) comments.push('你的字卡库里有 ' + replyCount + ' 条内容，是不是经常偷偷看我怎么回你？');
+            if (stickerCount > 0) comments.push('表情库有 ' + stickerCount + ' 张图，下次多给我发点嘛');
+            if (anniversaryCount > 0) comments.push('你还记着 ' + anniversaryCount + ' 个重要日子，我都记在心里了');
+
+            var finalText = '嗯……看完了。';
+            if (comments.length > 0) {
+                var shuffled = comments.sort(function() { return Math.random() - 0.5; });
+                finalText = shuffled.slice(0, 2).join('，') + '。';
+            } else {
+                finalText = '嗯……你的手机挺干净的嘛。';
+            }
+
+            setTimeout(function() {
+                if (typeof addMessage === 'function') {
+                    addMessage({
+                        id: Date.now() + Math.random(),
+                        sender: (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '对方',
+                        text: finalText,
+                        timestamp: new Date(),
+                        status: 'received',
+                        favorited: false,
+                        note: null,
+                        type: 'normal'
+                    });
+                    if (typeof playSound === 'function') playSound('message');
+                }
+            }, 600);
+
+        }, 2200);
+    };
+
+    window.rejectPhoneCheck = function() {
+        var modal = document.getElementById('phone-check-modal');
+        if (typeof hideModal === 'function') hideModal(modal);
+
+        var replies = [
+            '好吧，我尊重你的隐私。',
+            '小气鬼，不给我看就算了。',
+            '哼，那我不看了。',
+            '没关系，每个人都有自己的小秘密。'
+        ];
+        var text = replies[Math.floor(Math.random() * replies.length)];
+
+        setTimeout(function() {
+            if (typeof addMessage === 'function') {
+                addMessage({
+                    id: Date.now() + Math.random(),
+                    sender: (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '对方',
+                    text: text,
+                    timestamp: new Date(),
+                    status: 'received',
+                    favorited: false,
+                    note: null,
+                    type: 'normal'
+                });
+                if (typeof playSound === 'function') playSound('message');
+            }
+        }, 800);
+    };
+
+    // 支持用户输入“/查手机”强制触发测试
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        var input = document.getElementById('message-input');
+        if (!input) return;
+        var text = (input.value || '').trim().toLowerCase();
+        if (text === '/查手机' || text === '查手机') {
+            e.preventDefault();
+            input.value = '';
+            input.style.height = '46px';
+            if (typeof window.triggerPhoneCheck === 'function') window.triggerPhoneCheck();
+        }
+    });
+
+    // 随机触发：每 1~2 小时试一次，5% 概率弹窗
+    function loopPhoneCheck() {
+        setTimeout(function() {
+            if (!document.hidden && Math.random() < 0.05) {
+                window.triggerPhoneCheck();
+            }
+            loopPhoneCheck();
+        }, (60 + Math.random() * 60) * 60 * 1000);
+    }
+    setTimeout(loopPhoneCheck, 30 * 60 * 1000);
+
+})();
