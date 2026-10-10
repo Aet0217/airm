@@ -10848,3 +10848,256 @@
     color: var(--accent-color) !important;
     background-color: rgba(var(--accent-color-rgb), 0.1);
 }
+/* ===== 出题面板 ===== */
+.quiz-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+}
+.quiz-panel.open {
+    display: block;
+}
+.quiz-panel-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    animation: fadeIn 0.2s ease;
+}
+.quiz-panel-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--secondary-bg);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 18px max(20px, env(safe-area-inset-bottom, 0px));
+    max-height: 88vh;
+    overflow-y: auto;
+    animation: quizSheetIn 0.32s cubic-bezier(0.34,1.15,0.64,1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+}
+@keyframes quizSheetIn {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+.quiz-panel-handle {
+    width: 36px; height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+}
+.quiz-panel-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    text-align: center;
+    font-family: var(--font-family);
+}
+.quiz-field input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color 0.18s;
+}
+.quiz-field input:focus {
+    border-color: var(--accent-color);
+}
+.quiz-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 0 10px;
+}
+.quiz-mode-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.quiz-mode-switch {
+    display: flex;
+    background: var(--primary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+}
+.quiz-mode-btn {
+    padding: 6px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-family: var(--font-family);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.18s;
+    font-weight: 600;
+}
+.quiz-mode-btn.active {
+    background: var(--accent-color);
+    color: #fff;
+}
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.quiz-option-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.quiz-option-row input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    font-size: 13.5px;
+    font-family: var(--font-family);
+    outline: none;
+    transition: border-color 0.18s;
+}
+.quiz-option-row input:focus {
+    border-color: var(--accent-color);
+}
+.quiz-option-remove {
+    width: 32px; height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.18s;
+    flex-shrink: 0;
+}
+.quiz-option-remove:hover {
+    color: #ff4757;
+    background: rgba(255,71,87,0.08);
+}
+.quiz-add-btn {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px dashed var(--accent-color);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--accent-color);
+    font-size: 13px;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: background 0.18s;
+    margin-bottom: 14px;
+}
+.quiz-add-btn:hover {
+    background: rgba(var(--accent-color-rgb), 0.06);
+}
+.quiz-panel-actions {
+    display: flex;
+    gap: 10px;
+}
+.quiz-panel-actions .modal-btn {
+    flex: 1;
+}
+
+/* ===== 问卷消息卡片 ===== */
+.quiz-message {
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    max-width: 260px;
+}
+.quiz-message .quiz-q {
+    font-size: 14.5px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+.quiz-message .quiz-opt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+.quiz-message .quiz-opt {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    font-size: 13px;
+    background: rgba(255,255,255,0.14);
+    line-height: 1.4;
+    word-break: break-word;
+    transition: background 0.2s;
+}
+.message-received.quiz-message .quiz-opt {
+    background: rgba(0,0,0,0.05);
+}
+.quiz-message .quiz-opt-mark {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    opacity: 0.7;
+}
+.quiz-message .quiz-opt-mark.multi {
+    border-radius: 4px;
+}
+.quiz-message .quiz-opt.selected .quiz-opt-mark {
+    background: #fff;
+    color: var(--accent-color);
+    border-color: #fff;
+    opacity: 1;
+}
+.quiz-message .quiz-opt.selected {
+    background: rgba(255,255,255,0.28);
+}
+.message-received.quiz-message .quiz-opt.selected {
+    background: rgba(0,0,0,0.1);
+}
+.quiz-message .quiz-wait {
+    font-size: 11px;
+    opacity: 0.7;
+    font-style: italic;
+    text-align: center;
+    margin-top: 2px;
+}
+.quiz-message .quiz-answer-line {
+    font-size: 12px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255,255,255,0.3);
+    opacity: 0.95;
+}
+.message-received.quiz-message .quiz-answer-line {
+    border-top-color: rgba(0,0,0,0.12);
+}
+.quiz-message .quiz-answer-line b {
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.message-received.quiz-message .quiz-answer-line b {
+    color: var(--accent-color);
+    text-shadow: none;
+}
