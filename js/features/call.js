@@ -369,6 +369,36 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
 @keyframes cOrb{0%{transform:translate(0,0) rotate(0)}33%{transform:translate(18px,-14px) rotate(120deg)}66%{transform:translate(-10px,18px) rotate(240deg)}100%{transform:translate(0,0) rotate(360deg)}}
 @keyframes cWv{0%,100%{transform:scaleY(1);opacity:.5}50%{transform:scaleY(.32);opacity:.22}}
 @keyframes cCd{0%,80%,100%{transform:scale(.72);opacity:.3}40%{transform:scale(1.22);opacity:1}}
+.call-sticker-pop {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateY(0);
+    z-index: 20;
+    pointer-events: none;
+    animation: callStickerIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.call-sticker-pop img {
+    display: block;
+    max-width: 110px;
+    max-height: 110px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.85);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 0 3px rgba(255,255,255,0.15);
+    object-fit: cover;
+}
+.call-sticker-pop.leaving {
+    animation: callStickerOut 0.5s ease forwards;
+}
+@keyframes callStickerIn {
+    0%   { opacity: 0; transform: translate(-50%, 20px) scale(0.6); }
+    60%  { opacity: 1; transform: translate(-50%, -8px) scale(1.06); }
+    100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes callStickerOut {
+    0%   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -30px) scale(0.92); }
+}
         `;
         document.head.appendChild(el);
     }
@@ -627,9 +657,79 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
                 if (conn) conn.classList.remove('visible');
                 if (body) body.style.display = '';
                 tick();
+                startStickerLoop();
             }, 1400 + Math.random() * 1400);
         }
     }
+
+// ===== 视频通话中的表情包 =====
+let _stickerLoopTimer = null;
+let _stickerEl = null;
+let _lastStickerSrc = '';
+
+function startStickerLoop() {
+    stopStickerLoop();
+
+    // 第一次延迟 8~15 秒后开始尝试
+    _stickerLoopTimer = setTimeout(function loop() {
+        if (!S.active) return;
+
+        tryShowCallSticker();
+
+        // 之后每 20~40 秒尝试一次
+        _stickerLoopTimer = setTimeout(loop, 20000 + Math.random() * 20000);
+    }, 8000 + Math.random() * 7000);
+}
+
+function stopStickerLoop() {
+    if (_stickerLoopTimer) {
+        clearTimeout(_stickerLoopTimer);
+        _stickerLoopTimer = null;
+    }
+    if (_stickerEl && _stickerEl.parentNode) {
+        _stickerEl.parentNode.removeChild(_stickerEl);
+    }
+    _stickerEl = null;
+    _lastStickerSrc = '';
+}
+
+function tryShowCallSticker() {
+    // 20% 概率才弹
+    if (Math.random() > 0.2) return;
+
+    // 取对方表情库
+    const pool = (typeof stickerLibrary !== 'undefined' && Array.isArray(stickerLibrary))
+        ? stickerLibrary.filter(s => s && s !== _lastStickerSrc)
+        : [];
+    if (pool.length === 0) return;
+
+    const src = pool[Math.floor(Math.random() * pool.length)];
+    _lastStickerSrc = src;
+
+    const inner = document.getElementById('call-window-inner');
+    if (!inner) return;
+
+    // 移除旧的
+    if (_stickerEl && _stickerEl.parentNode) {
+        _stickerEl.parentNode.removeChild(_stickerEl);
+    }
+
+    const el = document.createElement('div');
+    el.className = 'call-sticker-pop';
+    el.innerHTML = `<img src="${src}" alt="">`;
+    inner.appendChild(el);
+    _stickerEl = el;
+
+    // 2.5 秒后淡出
+    setTimeout(function() {
+        if (!el.parentNode) return;
+        el.classList.add('leaving');
+        setTimeout(function() {
+            if (el.parentNode) el.parentNode.removeChild(el);
+            if (_stickerEl === el) _stickerEl = null;
+        }, 500);
+    }, 2500);
+}
 
     function endCall() {
         if (!S.active) return;
@@ -637,6 +737,7 @@ html:not([data-theme="dark"])[data-color-theme="black-white"] .message-sent{
         S.active = false; S.startTime = null;
         cancelAnimationFrame(S.timerRAF);
         clearTimeout(S.connectingTimer); clearTimeout(S.incomingTimer);
+        stopStickerLoop();
 
         ['call-window','call-mini-pill','call-incoming-overlay'].forEach(id => {
             const e = document.getElementById(id);
