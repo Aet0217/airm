@@ -2349,18 +2349,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (msg.type === 'system') return;
             if (msg.recalled) return;
 
-            // 标记为已处理
-            processedIds.add(msg.id);
-
             // 只有消息发出 2 秒后才开始判断，避免拦截刚发出的
-            const age = Date.now() - new Date(msg.timestamp).getTime();
-            if (age < 2000) return;
+const age = Date.now() - new Date(msg.timestamp).getTime();
+if (age < 2000) return;  // 太新，先不处理，等下一轮
+
+// 满足时间要求了，才标记为已处理
+processedIds.add(msg.id);
 
             // 判断概率
             const content = (msg.text || '').toLowerCase();
             const sensitiveWords = ['分手', '吵架', '讨厌', '滚', '不理你', '生气', '烦', '别联系', '再见', '算了'];
             const hitSensitive = sensitiveWords.some(function(w) { return content.includes(w); });
-            const chance = hitSensitive ? 0.45 : 0.08;
+            const chance = 1; // 100% 撤回，测完记得改回来
 
             if (Math.random() > chance) return;
 
