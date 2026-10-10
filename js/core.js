@@ -2887,3 +2887,172 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(bindCompanionEntry, 800);
     setTimeout(bindCompanionEntry, 2000);
 })();
+// ==================== 陪伴功能（独立完整版） ====================
+(function() {
+    var selectedActivity = 'study';
+    var selectedDuration = 25;
+    var companionTimer = null;
+    var companionRemaining = 0;
+    var isCompanionRunning = false;
+
+    var ACTIVITY_MAP = {
+        study: { name: '学习', color: 'linear-gradient(135deg, #e8f0f8, #d0e0f0)', dark: false, msg: '我陪着你，专心学吧' },
+        work:  { name: '工作', color: 'linear-gradient(135deg, #f0f0f0, #d8d8d8)', dark: false, msg: '我陪着你，专心工作' },
+        sleep: { name: '睡觉', color: 'linear-gradient(135deg, #1a1a2e, #16213e)', dark: true,  msg: '晚安，做个好梦' },
+        sport: { name: '运动', color: 'linear-gradient(135deg, #fff0e0, #ffe0c0)', dark: false, msg: '我陪着你，一起动起来' }
+    };
+
+    function formatTime(seconds) {
+        var m = Math.floor(seconds / 60);
+        var s = seconds % 60;
+        return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    window.openCompanionPanel = function() {
+        var panel = document.getElementById('companion-panel');
+        if (panel) panel.classList.add('open');
+    };
+
+    window.closeCompanionPanel = function() {
+        var panel = document.getElementById('companion-panel');
+        if (panel) panel.classList.remove('open');
+    };
+
+    // 活动选择
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.companion-activity-btn');
+        if (btn) {
+            document.querySelectorAll('.companion-activity-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            selectedActivity = btn.dataset.activity;
+        }
+    });
+
+    // 时长选择
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.companion-duration-btn');
+        if (btn) {
+            document.querySelectorAll('.companion-duration-btn').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            selectedDuration = parseInt(btn.dataset.duration, 10);
+        }
+    });
+
+    // 开始陪伴
+    window.startCompanion = function() {
+        var cfg = ACTIVITY_MAP[selectedActivity] || ACTIVITY_MAP.study;
+        var overlay = document.getElementById('companion-overlay');
+        var bg = document.getElementById('companion-bg');
+        var activityLabel = document.getElementById('companion-activity');
+        var timerEl = document.getElementById('companion-timer');
+        var msgEl = document.getElementById('companion-message');
+        var avatarWrap = document.getElementById('companion-avatar');
+
+        if (!overlay) return;
+
+        bg.style.background = cfg.color;
+        if (cfg.dark) {
+            overlay.classList.add('dark-mode');
+        } else {
+            overlay.classList.remove('dark-mode');
+        }
+        activityLabel.textContent = '一起' + cfg.name;
+        msgEl.textContent = cfg.msg;
+        timerEl.textContent = formatTime(selectedDuration * 60);
+
+        // 设置梦角头像（兼容各种情况）
+        if (avatarWrap) {
+            var partnerImg = null;
+            try {
+                partnerImg = document.querySelector('#partner-avatar img');
+            } catch(e) {}
+            if (partnerImg && partnerImg.src) {
+                avatarWrap.innerHTML = '<img src="' + partnerImg.src + '">';
+            } else {
+                avatarWrap.innerHTML = '<i class="fas fa-user"></i>';
+            }
+        }
+
+        if (typeof window.closeCompanionPanel === 'function') {
+            window.closeCompanionPanel();
+        }
+        overlay.classList.add('active');
+
+        companionRemaining = selectedDuration * 60;
+        isCompanionRunning = true;
+
+        if (companionTimer) clearInterval(companionTimer);
+        companionTimer = setInterval(function() {
+            companionRemaining--;
+            if (timerEl) timerEl.textContent = formatTime(companionRemaining);
+
+            if (companionRemaining <= 0) {
+                clearInterval(companionTimer);
+                companionTimer = null;
+                isCompanionRunning = false;
+                overlay.classList.remove('active');
+
+                if (typeof playSound === 'function') playSound('anniversary');
+
+                if (typeof addMessage === 'function') {
+                    var msgText = '我们一起' + cfg.name + '了 ' + selectedDuration + ' 分钟，真棒！';
+                    setTimeout(function() {
+                        addMessage({
+                            id: Date.now() + Math.random(),
+                            sender: (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '对方',
+                            text: msgText,
+                            timestamp: new Date(),
+                            status: 'received',
+                            favorited: false,
+                            note: null,
+                            type: 'normal'
+                        });
+                    }, 800);
+                }
+
+                if (typeof showNotification === 'function') {
+                    showNotification('陪伴结束啦 ✦', 'success', 3000);
+                }
+            }
+        }, 1000);
+    };
+
+    window.minimizeCompanion = function() {
+        var overlay = document.getElementById('companion-overlay');
+        if (overlay) overlay.classList.remove('active');
+        if (isCompanionRunning) {
+            if (typeof showNotification === 'function') {
+                showNotification('陪伴已收起，倒计时仍在继续', 'info', 2000);
+            }
+        }
+    };
+
+    window.endCompanion = function() {
+        if (companionTimer) {
+            clearInterval(companionTimer);
+            companionTimer = null;
+        }
+        var overlay = document.getElementById('companion-overlay');
+        if (overlay) overlay.classList.remove('active');
+        isCompanionRunning = false;
+
+        if (typeof showNotification === 'function') {
+            showNotification('已结束陪伴', 'info', 2000);
+        }
+
+        if (typeof addMessage === 'function' && companionRemaining > 0) {
+            setTimeout(function() {
+                addMessage({
+                    id: Date.now() + Math.random(),
+                    sender: (typeof settings !== 'undefined' && settings.partnerName) ? settings.partnerName : '对方',
+                    text: '辛苦啦，休息一下吧。',
+                    timestamp: new Date(),
+                    status: 'received',
+                    favorited: false,
+                    note: null,
+                    type: 'normal'
+                });
+            }, 600);
+        }
+    };
+})();
