@@ -11101,3 +11101,235 @@
     color: var(--accent-color);
     text-shadow: none;
 }
+/* ===== 陪伴功能 ===== */
+.companion-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99990;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: opacity 0.5s ease;
+}
+.companion-overlay.active {
+    display: flex;
+}
+.companion-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #e8f0f8, #d0e0f0);
+    transition: background 0.8s ease;
+    z-index: 0;
+}
+.companion-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.15) 100%);
+    pointer-events: none;
+}
+.companion-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    color: #333;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+.companion-overlay.dark-mode .companion-content {
+    color: #fff;
+}
+.companion-activity {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.85;
+}
+.companion-timer {
+    font-size: 72px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    color: inherit;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    line-height: 1;
+}
+.companion-avatar-wrap {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+.companion-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.6);
+    z-index: 2;
+    animation: companionBreath 4s ease-in-out infinite;
+}
+.companion-overlay.dark-mode .companion-avatar {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+}
+.companion-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.companion-avatar i { font-size: 32px; color: rgba(255,255,255,0.8); }
+.companion-overlay.dark-mode .companion-avatar i { color: rgba(255,255,255,0.6); }
+@keyframes companionBreath {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+.companion-pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.4);
+    animation: companionPulse 3s ease-out infinite;
+}
+.companion-overlay.dark-mode .companion-pulse { border-color: rgba(255,255,255,0.2); }
+@keyframes companionPulse {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+.companion-message {
+    font-size: 14px;
+    opacity: 0.8;
+    max-width: 260px;
+    line-height: 1.6;
+}
+.companion-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+.companion-btn {
+    padding: 12px 28px;
+    border-radius: 24px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.companion-btn-minimize {
+    background: rgba(255,255,255,0.4);
+    color: inherit;
+    backdrop-filter: blur(6px);
+}
+.companion-btn-minimize:hover { background: rgba(255,255,255,0.6); }
+.companion-overlay.dark-mode .companion-btn-minimize { background: rgba(255,255,255,0.1); }
+.companion-overlay.dark-mode .companion-btn-minimize:hover { background: rgba(255,255,255,0.2); }
+.companion-btn-end {
+    background: rgba(255,80,80,0.85);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255,80,80,0.3);
+}
+.companion-btn-end:hover { background: rgba(255,80,80,1); transform: translateY(-1px); }
+
+/* 选择面板 */
+.companion-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+}
+.companion-panel.open { display: block; }
+.companion-panel-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease;
+}
+.companion-panel-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--secondary-bg);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px max(20px, env(safe-area-inset-bottom, 0px));
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: quizSheetIn 0.32s cubic-bezier(0.34,1.15,0.64,1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+}
+.companion-panel-handle {
+    width: 36px; height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+}
+.companion-panel-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    text-align: center;
+}
+.companion-panel-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 16px 0 8px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+.companion-activity-grid,
+.companion-duration-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.companion-activity-btn,
+.companion-duration-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 6px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-color);
+    background: var(--primary-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    font-family: var(--font-family);
+}
+.companion-activity-btn i { font-size: 18px; }
+.companion-duration-btn {
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.companion-activity-btn.active,
+.companion-duration-btn.active {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 14px rgba(var(--accent-color-rgb), 0.3);
+    transform: translateY(-2px);
+}
+.companion-panel-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+.companion-panel-actions .modal-btn { flex: 1; }
