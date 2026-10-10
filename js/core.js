@@ -974,6 +974,60 @@ function createMessageFragment(msg, prevMsg, nextMsg, lastSenderRef) {
         return fragment;
     }
 
+if (msg.type === 'quiz') {
+    const quizWrap = document.createElement('div');
+    quizWrap.className = `message-wrapper ${msg.sender === 'user' ? 'sent' : 'received'}`;
+    quizWrap.dataset.id = msg.id;
+    quizWrap.dataset.msgId = msg.id;
+
+    const isMe = msg.sender === 'user';
+    const answers = msg.answer || [];
+    const options = msg.options || [];
+
+    const optsHTML = options.map(function(opt, idx) {
+        const selected = answers.indexOf(idx) !== -1;
+        const markShape = msg.multiSelect ? 'multi' : '';
+        const checkMark = selected ? '✓' : '';
+        return '<div class="quiz-opt ' + (selected ? 'selected' : '') + '">'
+            + '<div class="quiz-opt-mark ' + markShape + '">' + checkMark + '</div>'
+            + '<div>' + opt + '</div>'
+            + '</div>';
+    }).join('');
+
+    let answerLine = '';
+    if (answers.length > 0) {
+        const chosen = answers.map(function(i) { return options[i]; }).join('、');
+        const label = isMe ? '我' : (settings.partnerName || '对方');
+        answerLine = '<div class="quiz-answer-line">' + label + '选择了：<b>' + chosen + '</b></div>';
+    } else if (isMe) {
+        answerLine = '<div class="quiz-wait">等待 Ta 回答…</div>';
+    } else {
+        answerLine = '<div class="quiz-wait">请选择你的答案</div>';
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message quiz-message ' + (isMe ? 'message-sent' : 'message-received');
+    bubble.innerHTML = '<div class="quiz-q">' + msg.question + '</div>'
+        + '<div class="quiz-opt-list">' + optsHTML + '</div>'
+        + answerLine;
+
+    quizWrap.appendChild(bubble);
+
+    // 如果对方出的题，我还没回答，允许点击选项
+    if (!isMe && answers.length === 0) {
+        bubble.querySelectorAll('.quiz-opt').forEach(function(el, idx) {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function() {
+                handleQuizOptionClick(msg.id, idx);
+            });
+        });
+    }
+
+    fragment.appendChild(quizWrap);
+    lastSenderRef.current = msg.sender;
+    return fragment;
+}
+
     let showTimestamp = true;
     if (settings.timeFormat === 'off') {
         showTimestamp = false;
@@ -2407,5 +2461,118 @@ processedIds.add(msg.id);
         });
     }, 500);
 })();
+// ==================== 出题功能 ====================
+(function() {
+    let quizMode = 'single';
 
+    window.openQuizPanel = function() {
+        document.getElementById('quiz-panel').classList.add('open');
+        document.getElementById('quiz-question').value = '';
+        document.getElementById('quiz-options').innerHTML = '';
+        quizMode = 'single';
+        document.querySelectorAll('.quiz-mode-btn').forEach(function(b) {
+            b.classList.toggle('active', b.dataset.mode === 'single');
+        });
+        // 默认给两个空选项
+        addQuizOption();
+        addQuizOption();
+    };
+
+    window.closeQuizPanel = function() {
+        document.getElementById('quiz-panel').classList.remove('open');
+    };
+
+    window.addQuizOption = function() {
+        const container = document.getElementById('quiz-options');
+        if (container.children.length >= 6) {
+            if (typeof showNotification === 'function') showNotification('最多 6 个选项', 'warning');
+            return;
+        }
+        const row = document.createElement('div');
+        row.className = 'quiz-option-row';
+        row.innerHTML = '<input type="text" placeholder="选项内容…" maxlength="30">'
+            + '<button class="quiz-option-remove" type="button"><i class="fas fa-times"></i></button>';
+        row.querySelector('.quiz-option-remove').addEventListener('click', function() {
+            if (container.children.length <= 2) {
+                if (typeof showNotification === 'function') showNotification('至少保留 2 个选项', 'warning');
+                return;
+            }
+            row.remove();
+        });
+        container.appendChild(row);
+    };
+
+    window.sendQuiz = function() {
+        const question = document.getElementById('quiz-question').value.trim();
+        if (!question) {
+            if (typeof showNotification === 'function') showNotification('请输入问题', 'warning');
+            return;
+        }
+        const inputs = document.querySelectorAll('#quiz-options input');
+        const options = [];
+        let hasEmpty = false;
+        let hasDup = false;
+        inputs.forEach(function(inp) {
+            const v = inp.value.trim();
+            if (!v) { hasEmpty = true; return; }
+            if (options.indexOf(v) !== -1) hasDup = true;
+            options.push(v);
+        });
+        if (options.length < 2 || hasEmpty) {
+            if (typeof showNotification === 'function') showNotification('至少 2 个选项，且不能留空', 'warning');
+            return;
+        }
+        if (hasDup) {
+            if (typeof showNotification === 'function') showNotification('选项不能重复', 'warning');
+            return;
+        }
+
+        // 存入 messages
+        const msg = {
+            id: Date.now() + Math.random(),
+            sender: 'user',
+            text: question,
+            timestamp: new Date(),
+            status: 'sent',
+            type: 'quiz',
+            question: question,
+            options: options,
+            multiSelect: quizMode === 'multi',
+            answer: [],
+            favorited: false
+        };
+
+        if (typeof addMessage === 'function') addMessage(msg);
+        closeQuizPanel();
+
+        // 让梦角延迟回答（调用第四部分要做的逻辑，先留空）
+        if (typeof scheduleQuizAnswer === 'function') {
+            scheduleQuizAnswer(msg.id);
+        }
+    };
+
+    // 切换单选/多选
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.quiz-mode-btn');
+        if (btn) {
+            quizMode = btn.dataset.mode;
+            document.querySelectorAll('.quiz-mode-btn').forEach(function(b) {
+                b.classList.toggle('active', b === btn);
+            });
+        }
+    });
+
+    // 绑定出题按钮
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('quiz-btn');
+        if (btn) btn.addEventListener('click', window.openQuizPanel);
+    });
+    setTimeout(function() {
+        const btn = document.getElementById('quiz-btn');
+        if (btn && !btn._quizBound) {
+            btn._quizBound = true;
+            btn.addEventListener('click', window.openQuizPanel);
+        }
+    }, 800);
+})();
 
