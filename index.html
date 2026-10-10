@@ -1400,7 +1400,7 @@
                     <div class="settings-item" id="envelope-function">
                         <i class="fas fa-envelope"></i><span>信封投递</span>
                     </div>
-                    <div class="settings-item" id="companion-function">
+                    <div class="settings-item" id="companion-function" onclick="if(typeof openCompanionPanel==='function'){hideModal(document.getElementById('advanced-modal'));setTimeout(openCompanionPanel,200);}">
     <i class="fas fa-hourglass-half"></i><span>陪伴</span>
 </div>
                 </div>
@@ -2310,6 +2310,58 @@
                 <i class="fas fa-moon"></i><span>睡觉</span>
             </div>
             <div class="companion-activity-btn" data-activity="sport" data-color="#fff0e0">
+                <i class="fas fa-running"></i><span>运动</span>
+            </div>
+        </div>
+        <div class="companion-panel-sub">选择时长</div>
+        <div class="companion-duration-grid" id="companion-duration-grid">
+            <div class="companion-duration-btn" data-duration="10">10 分钟</div>
+            <div class="companion-duration-btn active" data-duration="25">25 分钟</div>
+            <div class="companion-duration-btn" data-duration="35">35 分钟</div>
+            <div class="companion-duration-btn" data-duration="60">1 小时</div>
+        </div>
+        <div class="companion-panel-actions">
+            <button class="modal-btn modal-btn-secondary" onclick="closeCompanionPanel()">取消</button>
+            <button class="modal-btn modal-btn-primary" onclick="startCompanion()">开始陪伴</button>
+        </div>
+    </div>
+</div>
+<!-- ===== 陪伴功能全屏界面 ===== -->
+<div id="companion-overlay" class="companion-overlay">
+    <div class="companion-bg" id="companion-bg"></div>
+    <div class="companion-content">
+        <div class="companion-activity" id="companion-activity">一起学习</div>
+        <div class="companion-timer" id="companion-timer">25:00</div>
+        <div class="companion-avatar-wrap">
+            <div class="companion-avatar" id="companion-avatar"><i class="fas fa-user"></i></div>
+            <div class="companion-pulse"></div>
+        </div>
+        <div class="companion-message" id="companion-message">我陪着你，专心做你的事</div>
+        <div class="companion-actions">
+            <button class="companion-btn companion-btn-minimize" onclick="minimizeCompanion()">收起</button>
+            <button class="companion-btn companion-btn-end" onclick="endCompanion()">结束陪伴</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 陪伴选择面板 ===== -->
+<div id="companion-panel" class="companion-panel">
+    <div class="companion-panel-mask" onclick="closeCompanionPanel()"></div>
+    <div class="companion-panel-sheet">
+        <div class="companion-panel-handle"></div>
+        <div class="companion-panel-title">陪伴</div>
+        <div class="companion-panel-sub">选择活动</div>
+        <div class="companion-activity-grid" id="companion-activity-grid">
+            <div class="companion-activity-btn active" data-activity="study">
+                <i class="fas fa-book"></i><span>学习</span>
+            </div>
+            <div class="companion-activity-btn" data-activity="work">
+                <i class="fas fa-briefcase"></i><span>工作</span>
+            </div>
+            <div class="companion-activity-btn" data-activity="sleep">
+                <i class="fas fa-moon"></i><span>睡觉</span>
+            </div>
+            <div class="companion-activity-btn" data-activity="sport">
                 <i class="fas fa-running"></i><span>运动</span>
             </div>
         </div>
