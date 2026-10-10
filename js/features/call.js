@@ -695,7 +695,7 @@ function stopStickerLoop() {
 
 function tryShowCallSticker() {
     // 20% 概率才弹
-    if (Math.random() > 0.2) return;
+    if (Math.random() > 1.0) return;
 
     // 取对方表情库
     const pool = (typeof stickerLibrary !== 'undefined' && Array.isArray(stickerLibrary))
